@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model 3D Viewer</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #28360c; font-family: system-ui, -apple-system, sans-serif; color: #eceef4; }
+    model-viewer { width: 100%; height: 100%; background-color: #28360c; --poster-color: #28360c; }
+    .bar {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .group {
+      pointer-events: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      background: rgba(20, 22, 28, 0.82); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; padding: 6px 10px; font-size: 12px;
+    }
+    button {
+      background: #282e3b; color: #eceef4; border: 1px solid #3b4252;
+      padding: 5px 8px; border-radius: 6px; font-size: 11.5px; cursor: pointer;
+    }
+    button:hover { background: #363e4f; }
+    input[type="range"] { width: 85px; accent-color: #3b82f6; }
+    input[type="color"] { width: 26px; height: 24px; border: none; background: none; cursor: pointer; }
+    .progress {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      width: min(300px, 80vw); height: 6px; background: rgba(255,255,255,0.15); border-radius: 999px; overflow: hidden;
+    }
+    .progress.hide { display: none; }
+    .progress-fill { height: 100%; width: 0%; background: #3b82f6; transition: width 0.15s; }
+  </style>
+</head>
+<body>
+  <model-viewer
+    id="mv"
+    src="https://dl.dropboxusercontent.com/scl/fi/143amj325bajzx10d9v6n/Red_Tractor.glb?rlkey=dscjxomzepj2emux9rzg8qqdc&st=46eky4ad&raw=1"
+    poster="poster.webp"
+    alt="Model 3D"
+    camera-controls
+    touch-action="none"
+    interaction-prompt="none"
+    camera-orbit="-44.1deg 82.4deg 4.195m"
+    camera-target="auto auto auto"
+    min-camera-orbit="auto auto 5%"
+    max-camera-orbit="auto auto 1000%"
+    min-field-of-view="5deg"
+    max-field-of-view="90deg"
+    exposure="1"
+    shadow-intensity="1.65"
+    shadow-softness="0.8"
+    environment-image="legacy"
+    
+    environment-rotation="90deg">
+    <div class="progress" slot="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+  </model-viewer>
+
+  <div class="bar">
+    <div class="group">
+      <button data-orbit="45deg 65deg auto">Izometric</button>
+      <button data-orbit="0deg 85deg auto">Față</button>
+      <button data-orbit="180deg 85deg auto">Spate</button>
+      <button data-orbit="-90deg 85deg auto">Stânga</button>
+      <button data-orbit="90deg 85deg auto">Dreapta</button>
+      <button data-orbit="0deg 5deg auto">Sus</button>
+    </div>
+    <div class="group">
+      <label>Expunere <input id="exp" type="range" min="0.2" max="2.5" step="0.05" value="1"></label>
+      <label>Lumină <input id="rot" type="range" min="0" max="360" step="1" value="90"></label>
+      <label>Fundal <input id="bg" type="color" value="#28360c"></label>
+      <button id="autoRot">Auto-rotire</button>
+    </div>
+  </div>
+
+  <script>
+    const mv = document.getElementById('mv');
+    const pFill = document.getElementById('pFill');
+    const pWrap = document.querySelector('.progress');
+
+    mv.addEventListener('progress', (e) => {
+      const pct = Math.round(e.detail.totalProgress * 100);
+      pFill.style.width = pct + '%';
+      if (pct >= 100) pWrap.classList.add('hide');
+    });
+
+    document.querySelectorAll('[data-orbit]').forEach((b) => {
+      b.addEventListener('click', () => {
+        mv.cameraTarget = 'auto auto auto';
+        mv.fieldOfView = 'auto';
+        mv.cameraOrbit = b.dataset.orbit;
+        mv.jumpCameraToGoal();
+      });
+    });
+
+    document.getElementById('exp').addEventListener('input', (e) => {
+      mv.exposure = parseFloat(e.target.value);
+      mv.setAttribute('exposure', e.target.value);
+    });
+
+    document.getElementById('rot').addEventListener('input', (e) => {
+      const d = e.target.value + 'deg';
+      mv.environmentRotation = d;
+      mv.setAttribute('environment-rotation', d);
+    });
+
+    document.getElementById('bg').addEventListener('input', (e) => {
+      mv.skyboxImage = null;
+      document.body.style.background = e.target.value;
+      mv.style.backgroundColor = e.target.value;
+    });
+
+    document.getElementById('autoRot').addEventListener('click', () => {
+      if (mv.hasAttribute('auto-rotate')) mv.removeAttribute('auto-rotate');
+      else mv.setAttribute('auto-rotate', '');
+    });
+  </script>
+</body>
+</html>
